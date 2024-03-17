@@ -1,0 +1,34 @@
+---
+- name: Installing java
+  yum:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - "java-11"
+    - "git"
+
+- name: Create application folder
+  file:
+    path: "{{ app_path }}"
+    state: directory
+
+- name: Configure java app service
+  template:
+    src: javaservice.j2
+    dest: /etc/systemd/system/{{ app_name }}.service
+  register: app_service_status
+
+- name: Enable java app at boot level
+  systemd:
+    name: "{{ app_name }}"
+    enabled: yes
+  when: app_service_status.changed
+  ignore_errors: true
+
+- name: deamon reload
+  systemd:
+    name: "{{ app_name }}"
+    daemon_reload: true
+    state: restarted
+  when: app_service_status.changed
+  ignore_errors: true
